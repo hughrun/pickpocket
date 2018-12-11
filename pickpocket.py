@@ -47,9 +47,7 @@ import urllib
 # Your new app will show a 'consumer key', which you need to paste in between the quotes below
 
 # assign the consumer key to a parameter called consumer_key
-# consumer_key = 'YOUR_CONSUMER_KEY_HERE'
-# TODO: remove this!!
-consumer_key = '82493-c642c072d5fb6aef18421a96'
+consumer_key = 'YOUR_CONSUMER_KEY_HERE'
 # assign a redirect URL for Pocket authentication
 redirect_uri = 'https://hugh.li/success'
 
