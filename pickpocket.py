@@ -24,7 +24,6 @@
 # ----------------
 
 # You will need to install the 'requests' library from the command line with 'pip requests' or, if you're using Python3 you might need to use 'pip3 requests' instead
-
 # import the 'requests' library into your script
 # docs for requests are at http://docs.python-requests.org
 import requests
@@ -48,8 +47,9 @@ import urllib
 # Your new app will show a 'consumer key', which you need to paste in between the quotes below
 
 # assign the consumer key to a parameter called consumer_key
-consumer_key = 'YOUR_CONSUMER_KEY_HERE'
-
+# consumer_key = 'YOUR_CONSUMER_KEY_HERE'
+# TODO: remove this!!
+consumer_key = '82493-c642c072d5fb6aef18421a96'
 # assign a redirect URL for Pocket authentication
 redirect_uri = 'https://hugh.li/success'
 
@@ -140,6 +140,7 @@ if user_input == "done":
       item_url = item_list[item]['given_url']
     else:  
       item_url = item_list[item]['resolved_url']
+    
     # check whether the resolved_url is already in 'summary'
     # if it isn't, make a new entry with resolved_url as the key and a list holding item_id as the value - basically we're reversing the logic of 'item_list'
     if not item_url in summary:
@@ -147,15 +148,27 @@ if user_input == "done":
     # if it is there already, add the item_id into the list
     else:
       summary[item_url].append(item_id)
+
+  # ------------------
+  # Finding duplicates
+  # ------------------
+
   # now we look for duplicates (this is why we use the url as the key)
   for item in summary:
+    
     # if the length of the list is more than 1, then there's a duplicate
     if len(summary[item]) > 1:
       print(item + ' occurs ' + str(len(summary[item])) + ' times')
-      # get the most recent ID in the list by getting index '0'
-      item_to_delete = summary[item][0]
-      # add it to the list
-      items_to_delete.append(item_to_delete)
+      # keep only the most recently added item by slicing the list to make a new list of everything except the last one
+      snip = len(summary[item]) - 1
+      duplicates = summary[item][:snip]
+      # add each duplicate to the items_to_delete list
+      for item in duplicates:
+        items_to_delete.append(item)
+
+  # -------------------
+  # Deleting duplicates
+  # -------------------
 
   # now use the modify API call to delete duplicate items
   # Docs - https://getpocket.com/developer/docs/v3/modify
@@ -163,15 +176,15 @@ if user_input == "done":
   # With our list of duplicate item ids, we create one final list of a bunch of JSON objects
   actions = []
 
+  # for each item to be deleted, append a JSON object to the actions list
   for item_id in items_to_delete:
     actions.append({"action":"delete", "item_id": item_id})
 
   # Double check you really want to delete them
-  print('About to delete ' + str(len(actions)) + ' items.')
+  print('About to delete ' + str(len(actions)) + ' duplicate items.')
   check = input('Delete these items? Type "delete" to confirm.\n>>')
   if check == 'delete':
     # For some reason when we use the 'send' API endpoint, instead of just sending JSON like we do for the other endpoints, we have to URL encode everything 🤷🏻‍
-
     # first turn the list into a JSON string
     actions_string = json.dumps(actions)
     # now URL encode it
