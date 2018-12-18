@@ -162,9 +162,9 @@ if user_input == "done":
     if len(summary[item]) > 1:
       print(item + ' occurs ' + str(len(summary[item])) + ' times')
       # keep only the most recently added item by slicing the list to make a new list of everything except the last one
-      snip = len(summary[item]) - 1
-      duplicates = summary[item][:snip]
-      # add each duplicate to the items_to_delete list
+      # see https://stackoverflow.com/questions/509211/understanding-pythons-slice-notation#509295 for an explanation of why this works
+      duplicates = summary[item][:-1]
+      # add each duplicate in the duplicates list for this url to the items_to_delete list
       for item in duplicates:
         items_to_delete.append(item)
 
@@ -178,7 +178,7 @@ if user_input == "done":
   # With our list of duplicate item ids, we create one final list of a bunch of JSON objects
   actions = []
 
-  # for each item to be deleted, append a JSON object to the actions list
+  # for each item to be deleted, append a dictionary to the actions list
   for item_id in items_to_delete:
     actions.append({"action":"delete", "item_id": item_id})
 
@@ -187,14 +187,16 @@ if user_input == "done":
   check = input('Delete these items? Type "delete" to confirm.\n>>')
   if check == 'delete':
     # For some reason when we use the 'send' API endpoint, instead of just sending JSON like we do for the other endpoints, we have to URL encode everything 🤷🏻‍
-    # first turn the list into a JSON string
+    # first turn the list and its component dictionaries into a JSON string using the json module's "dumps" ("dump string")
     actions_string = json.dumps(actions)
-    # now URL encode it
+    # now URL encode it using urllib
     actions_escaped = urllib.parse.quote(actions_string)
+    # now POST to pocket and assign the response to a parameter at the same time.
     deleted = requests.post('https://getpocket.com/v3/send?actions=' + actions_escaped + '&access_token=' + access_token + '&consumer_key=' + consumer_key)
     # print the response - it should return '<Response [200]>'
     print(deleted)
     # provide feedback on what happened
+    # 'deleted' is a raw http response so we need to turn it into a Python string before we can do a comparison
     if str(deleted) == '<Response [200]>':
       print('These duplicates have been deleted:')
       for item in actions:
