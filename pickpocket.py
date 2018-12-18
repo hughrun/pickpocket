@@ -23,7 +23,7 @@
 # Import libraries
 # ----------------
 
-# You will need to install the 'requests' library from the command line with 'pip requests' or, if you're using Python3 you might need to use 'pip3 requests' instead
+# You will need to install the 'requests' library from the command line with 'pip install requests' or, if you're using Python3 you might need to use 'pip3 install requests' instead
 # import the 'requests' library into your script
 # docs for requests are at http://docs.python-requests.org
 import requests
@@ -69,19 +69,20 @@ requestOne = requests.post('https://getpocket.com/v3/oauth/request', headers=hea
 # if you want to see the JSON response you can print to screen here by uncommenting the line below
 # print(requestOne.json())
 # we only want the 'code', so we get that like "jsonObject['key']"
-# save the token to a param for the next step
+# get the JSON response and save the token to a param for the next step
 request_token = requestOne.json()['code']
 # print the request token to the console so you know it happened
 print('Your request token (code) is ' + request_token)
 
 # now you need to authorise the app in your Pocket account
-# open the authorisation page in a new tab of your default web browser
+# build the url
 auth_url = 'https://getpocket.com/auth/authorize?request_token=' + request_token + '&redirect_uri=' + redirect_uri
+# open the authorisation page in a new tab of your default web browser
 webbrowser.open(auth_url, new=2)
 
 # We're not writing a server app here so we use a little hack to check whether the user has finished authorising before we continue
 # Just wait for the user (you!) to indicate they have finished authorising the app
-# the '\n' just prints a new line
+# the '\n' prints a new line
 print('Authorise your app in the browser tab that just opened.')
 user_input = input('Type "done" when you have finished authorising the app in Pocket \n>>')
 
@@ -90,11 +91,11 @@ if user_input == "done":
   # do a new request, this time to the oauth/authorize endpoint with the same JSON headers, but also sending the code as a param
   paramsTwo = {"consumer_key": consumer_key, "code": request_token}
   requestTwo = requests.post('https://getpocket.com/v3/oauth/authorize', headers=headers, params=paramsTwo)
-  # get the response as json
+  # get the JSON response as a Python dictionary and call it 'res'.
   res = requestTwo.json()
   # Finally we have the access token!
   print('Access token for ' + res['username'] + ' is ' + res['access_token'])
-  # Assign the access token to a paramater called access_token
+  # Assign the access token to a parameter called access_token
   access_token = res['access_token']
 
   # What a bunch of faffing around. Now we can make API calls with the consumer_key for the app and the access_token for the user.
@@ -123,8 +124,8 @@ if user_input == "done":
   # I hope you can guess what this will be used for...
   items_to_delete = []
 
-  # iterate over the keys (not the whole objects)
-  # i.e.'item' here refers to each item's key, not the value
+  # loop over each key (not the whole object) in item_list
+  # 'item' here refers to each item's key, not the whole object/dictionary
   print('checking ' + str(len(item_list)) + ' items...')
   for item in item_list:
     # conveniently the key Pocket uses is the item_id!
@@ -135,15 +136,18 @@ if user_input == "done":
     # generally we want to use the 'resolved url' but sometimes that might not exist
     # if so, use the 'given url' instead
     if not 'resolved_url' in item_list[item]:
+      # item_list is a Python dictionary where each value is itself another dictionary
+      # or in JSON terms, it's an object where each value is another object
+      # below we are getting the value of the current item id (i.e the first dict), then checking if there is a value within the second dict for the key 'given_url'
       item_url = item_list[item]['given_url']
     else:  
       item_url = item_list[item]['resolved_url']
     
     # check whether the resolved_url is already in 'summary'
-    # if it isn't, make a new entry with resolved_url as the key and a list holding item_id as the value - basically we're reversing the logic of 'item_list'
+    # if it isn't, make a new entry with resolved_url as the key and a list holding item_id as the value - basically we're reversing the logic of 'item_list'. This will allow us to check for duplicates easily in a moment.
     if not item_url in summary:
       summary[item_url] = [item_id]
-    # if it is there already, add the item_id into the list
+    # if it is there already, add the item_id into the existing list
     else:
       summary[item_url].append(item_id)
 
@@ -154,7 +158,7 @@ if user_input == "done":
   # now we look for duplicates (this is why we use the url as the key)
   for item in summary:
     
-    # if the length of the list is more than 1, then there's a duplicate
+    # if the length of the list is more than 1, then by definition there must be a duplicate
     if len(summary[item]) > 1:
       print(item + ' occurs ' + str(len(summary[item])) + ' times')
       # keep only the most recently added item by slicing the list to make a new list of everything except the last one
@@ -187,7 +191,6 @@ if user_input == "done":
     actions_string = json.dumps(actions)
     # now URL encode it
     actions_escaped = urllib.parse.quote(actions_string)
-    # now build the url and post to 'send' to delete the duplicates
     deleted = requests.post('https://getpocket.com/v3/send?actions=' + actions_escaped + '&access_token=' + access_token + '&consumer_key=' + consumer_key)
     # print the response - it should return '<Response [200]>'
     print(deleted)
