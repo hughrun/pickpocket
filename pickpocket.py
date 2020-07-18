@@ -49,7 +49,7 @@ import urllib
 # assign the consumer key to a parameter called consumer_key
 consumer_key = 'YOUR_CONSUMER_KEY_HERE'
 # assign a redirect URL for Pocket authentication
-redirect_uri = 'https://hugh.li/success'
+redirect_uri = 'https://hugh.run/success'
 
 # ----------------
 # Authorise
